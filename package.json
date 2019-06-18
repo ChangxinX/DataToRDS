@@ -7,7 +7,6 @@
     "createApi": "claudia create --region us-east-2 --api-module api",
     "createRDS": "aws rds create-db-instance --allocated-storage 20 --db-instance-identifier labDataRds --db-instance-class db.t2.micro --engine postgres --master-username myRdsTest --master-user-password myRdsTest --region us-east-2",
     "createTable": "node RDS/createTable.js",
-    "createJsonTable": "node RDS/createJsonTable.js",
     "dropTable": "node RDS/dropTable.js"
   },
   "author": "",
