@@ -1,0 +1,11 @@
+{
+  "lambda": {
+    "role": "uploadrds-executor",
+    "name": "uploadrds",
+    "region": "us-east-2"
+  },
+  "api": {
+    "id": "e2x80nrh8f",
+    "module": "api"
+  }
+}

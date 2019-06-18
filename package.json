@@ -1,0 +1,25 @@
+{
+  "name": "uploadrds",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "createApi": "claudia create --region us-east-2 --api-module api",
+    "createRDS": "aws rds create-db-instance --allocated-storage 20 --db-instance-identifier labDataRds --db-instance-class db.t2.micro --engine postgres --master-username myRdsTest --master-user-password myRdsTest --region us-east-2",
+    "createTable": "node RDS/createTable.js",
+    "createJsonTable": "node RDS/createJsonTable.js",
+    "dropTable": "node RDS/dropTable.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-lambda-multipart-parser": "^0.1.3",
+    "aws-sdk": "^2.458.0",
+    "claudia-api-builder": "^4.1.2",
+    "pg": "^7.10.0"
+  },
+  "description": "",
+  "devDependencies": {
+    "claudia": "^5.5.0"
+  }
+}
