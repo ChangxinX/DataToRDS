@@ -10,7 +10,7 @@ const pool = new Pool({
     user: 'labtest2',
     host: 'labtest2.cawsnbpmsxae.us-east-2.rds.amazonaws.com',
     database: 'labtest22',
-    password: 'labtest2',
+    password: process.env.RDS_PASSCODE,
     port: 5432
 });
 
