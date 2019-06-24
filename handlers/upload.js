@@ -51,39 +51,45 @@ async function upload(request) {
         if (s3ObjectExists) throw new api.ApiResponse({errorMassage: fileName + 
             ' has name conflict. Not saved.'}, {'Content-Type': 'application/json' }, 409);
 
-        //return nameCheck
-        
-        
-        //return "s3result"
-        let content = contentOriginal.split(/[\n\r]+/);
-        content = content.filter(row => row.split(/[\s,\t]+/).length > 1);
-
-
-        // Decide sample type based on file header
-        let keys = content[0].split(/[\s,\t]+/);
+        // determining sample type based on file name
         let sampleType;
-
-        if (keys.indexOf('u1') > -1 && keys.indexOf('u2') > -1) {
-            sampleType = 'urine';
-        } else if (keys.indexOf('b1') > -1 && keys.indexOf('b2') > -1) {
-            sampleType = 'blood';
-        } else if (keys.indexOf('Cortisol_absolute') > -1 && keys.indexOf('Total_protein_abs') > -1) {
-            sampleType = 'saliva_cortisol';
-        } else if (keys.indexOf('Signal') > -1) {
+        if (fileName.indexOf('raw') > -1) {
             await s3.putObject({
                 Bucket: "labdataupload-teststring",
                 Key: fileName,
                 Body: contentOriginal,
             }).promise();
             return fileName + ' saved to s3'
+        } else if (fileName.indexOf('SL') == 0 && fileName.indexOf('Prc') > -1) {
+            sampleType = 'urine';
+        } else if (fileName.indexOf('ST') == 0 && fileName.indexOf('Prc') > -1) {
+            sampleType = 'stool';
+        } else if (fileName.indexOf('BL') == 0 && fileName.indexOf('Prc') > -1) {
+            sampleType = 'blood';
+        } else if (fileName.indexOf('UR') == 0 && fileName.indexOf('Prc') > -1) {
+            sampleType = 'blood';
         } else {
-            throw new api.ApiResponse({error: 'Wrong headers in file: ' + fileName + '. ' +
-             fileSaved.length +' files saved. List of saved file: '+ 
-             fileSaved}, {'Content-Type': 'application/json' }, 409); 
+            throw new api.ApiResponse({error: fileName +' didn\'t  follow naming convention. Can not determine sample type.'}, {'Content-Type': 'application/json' }, 409); 
+        }       
+
+        // check sample uniqueness
+        let sampleNameList = values.map(x => x[0])
+        let uniqueSampleNameList = [ ...new Set(sampleNameList) ]
+        if (sampleNameList.length > uniqueSampleNameList.length) {
+            let duplicatedSample = uniqueSampleNameList.filter(x => sampleNameList.filter(y => y==x).length > 1)
+
+            throw new api.ApiResponse({error: duplicatedSample + ' are not unique. Please check and correct.'+ fileName + ' not saved!'}, {'Content-Type': 'application/json' }, 409);
         }
+        
+        
+        
+        
+        // parse file to json format
+        
+        let content = contentOriginal.split(/[\n\r]+/);
+        content = content.filter(row => row.split(/[\s,\t]+/).length > 1);
 
-
-        // parse file to json
+        let keys = content[0].split(/[\s,\t]+/);
         let values = content.slice(1).map(x=>x.split(/[\s,\t]+/));
 
         values = values.map(x =>  x.map((y) => {
@@ -109,21 +115,11 @@ async function upload(request) {
 
         const dbClient = await pool.connect();
 
-        // Check file name conflict 
-        //let fileNameCheck = await dbClient.query(`SELECT filename FROM ${sampleType} where filename = $1;`, [fileName]);  
-        //if (fileNameCheck.rowCount>0) {
-        //    throw new api.ApiResponse({error: fileName +' has name conflict with file in database!. ' + fileSaved.length +' files saved. List of saved file: '+ fileSaved}, {'Content-Type': 'application/json' }, 409); 
-        //};
-
+        // check if sample already exist.
         
         let barcodes = rawjson.map( x => Object.values(x)[0] );
 
-        // Check barcode uniqueness in uploaded file
-        let uniquebarcodes = [ ...new Set(barcodes) ];
-       // if (barcodes.length != uniquebarcodes.length) throw new api.ApiResponse({error: 'Duplicate barcode in file: ' + fileName + '. ' + fileSaved.length +' files saved. List of saved file: '+ fileSaved }, { 'Content-Type': 'application/json' }, 409);
-        
-        // Check barcode conflict
-        let barcodeString = uniquebarcodes.join("','")
+        let barcodeString = barcodes.join("','")
 
         let colName = keys[0]
         let barcodeCheck = await dbClient.query(`SELECT ${colName} FROM ${sampleType} WHERE ${colName} in ('${barcodeString}')`);
